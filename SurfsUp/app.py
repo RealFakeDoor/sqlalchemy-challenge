@@ -1,5 +1,6 @@
 # Import the dependencies.
 from flask import Flask, jsonify
+
 import datetime as dt
 
 # Python SQL toolkit and Object Relational Mapper
@@ -7,7 +8,6 @@ import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, func, desc
-
 
 #################################################
 # Database Setup
@@ -36,10 +36,10 @@ session = Session(engine)
 #################################################
 app = Flask(__name__)
 
-
 #################################################
 # Flask Routes
 #################################################
+
 # Define what to do when a user hits the index route.
 @app.route("/")
 def home():
@@ -47,7 +47,7 @@ def home():
     return (
         f"Available Routes:<br/>"
         f"/api/v1.0/precipitation<br/>"
-        f"/api/v1.0/station<br/>"
+        f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
         f"/api/v1.0/start<br/>"
         f"/api/v1.0/start/end<br/>"
@@ -57,34 +57,70 @@ def home():
 # Convert the query results to a dictionary by using date as the key and prcp as the value.
 # Return the JSON representation of your dictionary:
 @app.route("/api/v1.0/precipitation")
-def normal():
-    return
-
+def precipitation():
+    return jsonify()
 
 # Returns a JSON list of stations from the dataset:
 @app.route("/api/v1.0/stations")
-def jsonified():
-    return
+def stations():
+    # Query the stations
+    station_list = []
+    stations = session.query(Station.station, Station.name).all()
+    for station in stations:
+        station_dict = {}
+        station_dict["station"] = station[0]
+        station_dict["name"] = station[1]
+        station_list.append(station_dict)
+
+    # Convert the list of dictionaries into JSON format and return
+    return jsonify(station_list)
 
 
 # Query the dates and temperature observations of the most-active station for the previous year of data.
 # Return a JSON list of temperature observations for the previous year.
 @app.route("/api/v1.0/tobs")
 def tobs():
-    return
+    # Find the most active station
+    most_active_station = session.query(Measurement.station, func.count(Measurement.station))\
+                            .group_by(Measurement.station).order_by(func.count(Measurement.station).desc())\
+                            .first()[0]
+
+    # Determine the date range for the previous year
+    most_recent_date = session.query(func.max(Measurement.date)).scalar()
+    previous_year_date = dt.datetime.strptime(most_recent_date, '%Y-%m-%d') - dt.timedelta(days=365)
+    
+    # Query temperature observations for the most active station within the previous year
+    results = session.query(Measurement.date, Measurement.tobs)\
+                    .filter(Measurement.station == most_active_station)\
+                    .filter(Measurement.date >= previous_year_date).all()
+    
+    # Convert the results to a list of dictionaries
+    tobs_list = []
+    for result in results:
+        tobs_dict = {}
+        tobs_dict["date"] = result[0]
+        tobs_dict["temperature"] = result[1]
+        tobs_list.append(tobs_dict)
+    
+    # Return the temperature observations in JSON format
+    return jsonify(tobs_list)
+
 
 # Return a JSON list of the minimum temperature, the average temperature, and the maximum temperature for a specified start or start-end range:
+
 
 # For a specified start, calculate TMIN, TAVG, and TMAX for all the dates greater than or equal to the start date.
 @app.route("/api/v1.0/<start>")
 def start_date():
-    return
+    return jsonify()
+
 
 
 # For a specified start date and end date, calculate TMIN, TAVG, and TMAX for the dates from the start date to the end date, inclusive.
 @app.route("/api/v1.0/<start>/<end>")
 def start_end_date():
-    return
+    return jsonify()
+
            
 if __name__ == '__main__':
     app.run(debug=True)
