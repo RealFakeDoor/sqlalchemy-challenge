@@ -35,7 +35,6 @@ session = Session(engine)
 # Flask Setup
 #################################################
 app = Flask(__name__)
-
 #################################################
 # Flask Routes
 #################################################
@@ -58,7 +57,18 @@ def home():
 # Return the JSON representation of your dictionary:
 @app.route("/api/v1.0/precipitation")
 def precipitation():
-    return jsonify()
+    # Query precipitation data
+    results = session.query(Measurement.date, Measurement.prcp).all()
+    
+    # Convert the results to a dictionary with date as key and prcp as value
+    precipitation_dict = {}
+    for result in results:
+        date = result[0]
+        prcp = result[1]
+        precipitation_dict[date] = prcp
+    
+    # Return the precipitation dictionary in JSON format
+    return jsonify(precipitation_dict)
 
 # Returns a JSON list of stations from the dataset:
 @app.route("/api/v1.0/stations")
@@ -111,16 +121,54 @@ def tobs():
 
 # For a specified start, calculate TMIN, TAVG, and TMAX for all the dates greater than or equal to the start date.
 @app.route("/api/v1.0/<start>")
-def start_date():
-    return jsonify()
+def start_date(start):
+    # Query minimum, average, and maximum temperatures for dates greater than or equal to the start date.
+    session = Session(engine)
+    results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)) \
+                    .filter(Measurement.date >= start) \
+                    .all()
+    
+    # Extract the results
+    TMIN = results[0][0]
+    TAVG = results[0][1]
+    TMAX = results[0][2]
+    
+    # Create a dictionary to hold the results
+    temp_stats = {
+        "TMIN": TMIN,
+        "TAVG": TAVG,
+        "TMAX": TMAX
+    }
+    
+    # Return the results in JSON format
+    return jsonify(temp_stats)
 
 
 
 # For a specified start date and end date, calculate TMIN, TAVG, and TMAX for the dates from the start date to the end date, inclusive.
 @app.route("/api/v1.0/<start>/<end>")
-def start_end_date():
-    return jsonify()
+def start_end_date(start, end):
+# Query minimum, average, and maximum temperatures for dates between the start date and end date (inclusive)
+    session = Session(engine)
+    results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)) \
+                    .filter(Measurement.date >= start) \
+                    .filter(Measurement.date <= end) \
+                    .all()
+    
+    # Extract the results
+    TMIN = results[0][0]
+    TAVG = results[0][1]
+    TMAX = results[0][2]
+    
+    # Create a dictionary to hold the results
+    temp_stats = {
+        "TMIN": TMIN,
+        "TAVG": TAVG,
+        "TMAX": TMAX
+    }
+    
+    # Return the results in JSON format
+    return jsonify(temp_stats)
 
-           
 if __name__ == '__main__':
     app.run(debug=True)
