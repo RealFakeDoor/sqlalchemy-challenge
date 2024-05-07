@@ -57,6 +57,7 @@ def home():
 # Return the JSON representation of your dictionary:
 @app.route("/api/v1.0/precipitation")
 def precipitation():
+    session = Session(engine)
     # Query precipitation data
     results = session.query(Measurement.date, Measurement.prcp).all()
     
@@ -73,6 +74,7 @@ def precipitation():
 # Returns a JSON list of stations from the dataset:
 @app.route("/api/v1.0/stations")
 def stations():
+    session = Session(engine)
     # Query the stations
     station_list = []
     stations = session.query(Station.station, Station.name).all()
@@ -90,6 +92,7 @@ def stations():
 # Return a JSON list of temperature observations for the previous year.
 @app.route("/api/v1.0/tobs")
 def tobs():
+    session = Session(engine)
     # Find the most active station
     most_active_station = session.query(Measurement.station, func.count(Measurement.station))\
                             .group_by(Measurement.station).order_by(func.count(Measurement.station).desc())\
