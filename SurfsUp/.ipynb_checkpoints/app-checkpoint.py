@@ -22,10 +22,10 @@ Base = automap_base()
 # Use the Base class to reflect the database tables
 Base.prepare(autoload_with=engine)
 
-# Assign the measurement class to a variable called `Measurement` and
+# Assign the measurement class to a variable called `measurement` and
 Measurement = Base.classes.measurement
 
-# the station class to a variable called `Station`
+# the station class to a variable called `station`
 Station = Base.classes.station
 
 # Create a session
@@ -58,8 +58,15 @@ def home():
 @app.route("/api/v1.0/precipitation")
 def precipitation():
     session = Session(engine)
-    # Query precipitation data
-    results = session.query(Measurement.date, Measurement.prcp).all()
+    
+    # Calculate the date one year ago from the most recent date in the database
+    most_recent_date = session.query(func.max(Measurement.date)).scalar()
+    one_year_ago = dt.datetime.strptime(most_recent_date, '%Y-%m-%d') - dt.timedelta(days=365)
+    
+    # Query precipitation data for the last year
+    results = session.query(Measurement.date, Measurement.prcp)\
+                     .filter(Measurement.date >= one_year_ago)\
+                     .all()
     
     # Convert the results to a dictionary with date as key and prcp as value
     precipitation_dict = {}

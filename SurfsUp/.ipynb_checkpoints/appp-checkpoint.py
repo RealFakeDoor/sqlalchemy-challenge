@@ -22,10 +22,10 @@ Base = automap_base()
 # Use the Base class to reflect the database tables
 Base.prepare(autoload_with=engine)
 
-# Assign the measurement class to a variable called `measurement` and
+# Assign the measurement class to a variable called `Measurement` and
 Measurement = Base.classes.measurement
 
-# the station class to a variable called `station`
+# the station class to a variable called `Station`
 Station = Base.classes.station
 
 # Create a session
@@ -52,7 +52,7 @@ def home():
         f"/api/v1.0/start/end<br/>"
     )
 
-# Returns the JSON representaion of your dictionary
+# Returns the JSON representation of your dictionary
 # Convert the query results to a dictionary by using date as the key and prcp as the value.
 # Return the JSON representation of your dictionary:
 @app.route("/api/v1.0/precipitation")
@@ -84,11 +84,11 @@ def stations():
     session = Session(engine)
     # Query the stations
     station_list = []
-    stations = session.query(Station.station, Station.name).all()
-    for station in stations:
+    stations_data = session.query(Station.station, Station.name).all()
+    for station_row in stations_data:  # Renamed the loop variable to avoid conflict
         station_dict = {}
-        station_dict["station"] = station[0]
-        station_dict["name"] = station[1]
+        station_dict["station"] = station_row[0]  # Accessing station code
+        station_dict["name"] = station_row[1]  # Accessing station name
         station_list.append(station_dict)
 
     # Convert the list of dictionaries into JSON format and return
